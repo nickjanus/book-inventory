@@ -1,0 +1,3 @@
+db_path: '../data/inventory.db'
+schema_path: '../data/schema.yaml' 
+connector: 'sqlite3'
