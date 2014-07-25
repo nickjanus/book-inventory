@@ -3,23 +3,23 @@ require 'active_record'
 require 'yaml'
 
 module Database
-  module Errors
+  module Error
     class SchemaDefinition < Exception {}
   end
 
-  class DbUtil
+  class Util
     def intialization
-      @config = YAML::load(File.open('../config/config.yml'))
+      @config = YAML::load(File.open(get_path('../config/config.yml')))
       ActiveRecord::Base.logger = Logger.new(File.open('database.log', 'w'))
       ActiveRecord::Base.establish_connection(
         :adapter  => @confg[:adapter],
-        :database => @config[:db_path]
+        :database => get_path(@config[:db])
       )
       @connection = ActiveRecord::Base.connection
     end
 
     def setup_database 
-      import_schema(File.open(@config[:schema_path]))
+      import_schema(File.open(@config[:schema]))
     end
 
     def import_schema(yaml_file)
@@ -38,6 +38,11 @@ module Database
       rescue => e
         raise Errors::SchemaDefinition(e.message)
       end
+    end
+
+    private
+    def get_path relative_path
+      File.expand_path(config_value,__FILE__)
     end
   end
 end
