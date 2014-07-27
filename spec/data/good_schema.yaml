@@ -1,0 +1,8 @@
+books:
+  title: string
+  pages: integer
+  publication_date: date
+
+authors:
+  last_name: string 
+  dob: date

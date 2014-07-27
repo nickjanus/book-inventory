@@ -1,48 +1,76 @@
 #!/usr/bin/env ruby
 require 'active_record'
 require 'yaml'
+require 'set'
 
-module Database
+module BookInventory
   module Error
-    class SchemaDefinition < Exception {}
+    class YamlSyntax < Exception; end
+    class SchemaDefinition < Exception; end
+    class NoConfig < Exception; end
   end
 
-  class Util
-    def intialization
-      @config = YAML::load(File.open(get_path('../config/config.yml')))
-      ActiveRecord::Base.logger = Logger.new(File.open('database.log', 'w'))
+  class Database 
+    attr_reader :connection, :config, :db
+
+    def initialize(config = 'config/config.yml', log = 'database.log')
+      raise Error::NoConfig unless config
+      @config = YAML::load(File.open(get_path(config)))
+      @db = get_path(@config['db'])
+      ActiveRecord::Base.logger = Logger.new(File.open(log, 'w')) unless log.nil?
       ActiveRecord::Base.establish_connection(
-        :adapter  => @confg[:adapter],
-        :database => get_path(@config[:db])
+        :adapter  => @config['adapter'],
+        :database => @db
       )
       @connection = ActiveRecord::Base.connection
     end
 
     def setup_database 
-      import_schema(File.open(@config[:schema]))
+      import_schema(File.open(get_path(@config['schema'])))
     end
 
     def import_schema(yaml_file)
-      schema = YAML::load(yaml_file)
-    
       begin
-        schema.each do |table, columns|
-          unless @connection.tables.include? table
-            create_table table.to_sym do |table|
-              columns.each do |column, type|
-                table.column (column, type)
+        schema = YAML::load(yaml_file)
+      rescue => e
+        raise Error::YamlSyntax.new(e.message)
+      end
+
+      begin
+        connection = @connection #instance variable not recognized in block below
+        ActiveRecord::Schema.define do
+          schema.each do |table_name, columns|
+            unless connection.tables.include? table_name #function specific to sqlite3 adapter
+              create_table table_name do |table|
+                columns.each do |column_name, type|
+                  table.column(column_name, type)
+                end
               end
             end
           end
         end
       rescue => e
-        raise Errors::SchemaDefinition(e.message)
+        raise Error::SchemaDefinition.new(e.message)
+      ensure
+        delete
       end
     end
 
+    def tables
+      @connection.tables
+    end
+
+    def columns(table_name)
+      @connection.columns(table_name)
+    end
+
+    def delete
+        File.delete(@db) if File.exist?(@db)
+    end
+
     private
-    def get_path relative_path
-      File.expand_path(config_value,__FILE__)
+    def get_path(project_path)
+      File.expand_path('../../' + project_path , __FILE__)
     end
   end
 end

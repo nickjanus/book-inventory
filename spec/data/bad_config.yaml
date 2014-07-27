@@ -1,0 +1,3 @@
+db: 'spec/data/inventory.db'
+schema: 'spec/data/bad_schema.yaml' 
+adapter: 'sqlite3'

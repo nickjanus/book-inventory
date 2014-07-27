@@ -1,0 +1,9 @@
+books:
+  pages: integer
+  publication_date: date
+
+authors:
+  last_name: bad_type
+  bros: 
+    bros: bro
+  dob: date
