@@ -14,7 +14,7 @@ describe BI::Database do
       end
 
       it "has a yaml config" do
-        expect(db.config). to be_an_instance_of(Hash)
+        expect(db.config).to be_an_instance_of(Hash)
       end
     end
     

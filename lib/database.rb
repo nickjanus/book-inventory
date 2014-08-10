@@ -1,4 +1,6 @@
 #!/usr/bin/env ruby
+
+require 'util'
 require 'active_record'
 require 'yaml'
 require 'set'
@@ -15,8 +17,8 @@ module BookInventory
 
     def initialize(config = 'config/config.yml', log = 'database.log')
       raise Error::NoConfig unless config
-      @config = YAML::load(File.open(get_path(config)))
-      @db = get_path(@config['db'])
+      @config = YAML::load(File.open(Util::get_path(config)))
+      @db = Util::get_path(@config['db'])
       ActiveRecord::Base.logger = Logger.new(File.open(log, 'w')) unless log.nil?
       ActiveRecord::Base.establish_connection(
         :adapter  => @config['adapter'],
@@ -26,7 +28,7 @@ module BookInventory
     end
 
     def setup_database 
-      import_schema(File.open(get_path(@config['schema'])))
+      import_schema(File.open(Util::get_path(@config['schema'])))
     end
 
     def import_schema(yaml_file)
@@ -66,11 +68,6 @@ module BookInventory
 
     def delete
         File.delete(@db) if File.exist?(@db)
-    end
-
-    private
-    def get_path(project_path)
-      File.expand_path('../../' + project_path , __FILE__)
     end
   end
 end
